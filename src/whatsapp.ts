@@ -50,9 +50,17 @@ class WhatsAppManager {
       const path = require("path");
       const sessionDir = path.join(process.cwd(), ".wwebjs_auth", "session");
       if (fs.existsSync(sessionDir)) {
-        for (const lockFile of ["SingletonLock", "SingletonSocket", "SingletonCookie", "DevToolsActivePort"]) {
+        for (const lockFile of [
+          "SingletonLock",
+          "SingletonSocket",
+          "SingletonCookie",
+          "DevToolsActivePort",
+        ]) {
           const target = path.join(sessionDir, lockFile);
-          if (fs.existsSync(target) || fs.lstatSync(target).isSymbolicLink?.()) {
+          if (
+            fs.existsSync(target) ||
+            fs.lstatSync(target).isSymbolicLink?.()
+          ) {
             try {
               fs.unlinkSync(target);
             } catch {}
@@ -78,6 +86,11 @@ class WhatsAppManager {
           "--no-sandbox",
           "--disable-setuid-sandbox",
           "--disable-dev-shm-usage",
+          "--disable-gpu",
+          "--disable-accelerated-2d-canvas",
+          "--no-first-run",
+          "--no-zygote",
+          "--single-process", // Helps keep RAM usage under 512MB on Render Free/Starter
           "--disable-gpu",
         ],
       },
@@ -122,7 +135,9 @@ class WhatsAppManager {
     try {
       await this.client.initialize();
     } catch (err: any) {
-      const errMsg = err?.message || (typeof err === "string" ? err : "Auth timeout or connection error");
+      const errMsg =
+        err?.message ||
+        (typeof err === "string" ? err : "Auth timeout or connection error");
       console.error("WhatsApp initialization error:", errMsg);
       this.isReady = false;
       this.connectedAt = null;
@@ -155,7 +170,10 @@ class WhatsAppManager {
     return `${cleaned}@c.us`;
   }
 
-  private personalizeMessage(template: string, contact: Record<string, any>): string {
+  private personalizeMessage(
+    template: string,
+    contact: Record<string, any>,
+  ): string {
     return template.replace(/\{\{(\w+)\}\}/gi, (_, key) => {
       const val = contact[key.toLowerCase()];
       return val != null ? String(val) : "";
@@ -186,7 +204,7 @@ class WhatsAppManager {
       options.message,
       total,
       options.delayMin,
-      options.delayMax
+      options.delayMax,
     );
     db.insertMessagesBatch(campaignId, options.contacts);
 
@@ -209,10 +227,7 @@ class WhatsAppManager {
 
       const contact = options.contacts[i];
       const chatId = this.formatPhone(contact.phone);
-      const personalizedMsg = this.personalizeMessage(
-        options.message,
-        contact
-      );
+      const personalizedMsg = this.personalizeMessage(options.message, contact);
 
       try {
         await this.client.sendMessage(chatId, personalizedMsg);
@@ -295,9 +310,9 @@ class WhatsAppManager {
         const info = (this.client as any).info;
         if (info) {
           clientInfo = {
-            pushname: info.pushname || '',
-            platform: info.platform || '',
-            phone: info.wid?._serialized?.split('@')[0] || info.wid?.user || '',
+            pushname: info.pushname || "",
+            platform: info.platform || "",
+            phone: info.wid?._serialized?.split("@")[0] || info.wid?.user || "",
           };
         }
       } catch {}
@@ -312,8 +327,8 @@ class WhatsAppManager {
 
   async clearAuth(): Promise<void> {
     await this.disconnect();
-    const fs = require('fs');
-    const authPath = require('path').join(process.cwd(), '.wwebjs_auth');
+    const fs = require("fs");
+    const authPath = require("path").join(process.cwd(), ".wwebjs_auth");
     if (fs.existsSync(authPath)) {
       fs.rmSync(authPath, { recursive: true, force: true });
     }
