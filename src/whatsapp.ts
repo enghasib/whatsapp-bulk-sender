@@ -82,6 +82,7 @@ class WhatsAppManager {
       authTimeoutMs: 0,
       puppeteer: {
         headless: true,
+        timeout: 60000, // Give Puppeteer 60s to launch Chrome
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -90,8 +91,12 @@ class WhatsAppManager {
           "--disable-accelerated-2d-canvas",
           "--no-first-run",
           "--no-zygote",
-          "--single-process", // Helps keep RAM usage under 512MB on Render Free/Starter
-          "--disable-gpu",
+          "--disable-extensions",
+          "--disable-background-networking",
+          "--disable-default-apps",
+          "--disable-sync",
+          "--mute-audio",
+          "--js-flags=--max-old-space-size=256", // Prevents Render 512MB OOM crash
         ],
       },
     });
