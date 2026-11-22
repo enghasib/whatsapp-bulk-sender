@@ -2,6 +2,7 @@ node_modules/
 dist/
 .wwebjs_auth/
 .wwebjs_cache/
+.cache/
 
 # Local Netlify folder
 .netlify
