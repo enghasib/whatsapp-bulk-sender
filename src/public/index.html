@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatsApp Bulk Sender</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+  <div class="glow glow-3"></div>
+  <div class="glow glow-4"></div>
+  <div class="glow glow-5"></div>
+
+  <div class="app">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="logo">
+          <div class="logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+          </div>
+          <span class="logo-text">BulkSend</span>
+        </div>
+        <!-- View Toggle -->
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="sender">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Sender
+          </button>
+          <button class="view-btn" data-view="history">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            History
+          </button>
+          <button class="view-btn" data-view="settings">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            Settings
+          </button>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
+          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <div id="connection-badge" class="badge badge-offline">
+          <span class="badge-dot"></span>
+          <span id="badge-text">Offline</span>
+        </div>
+        <button id="btn-connect" class="btn btn-glass btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Connect
+        </button>
+        <button id="btn-disconnect" class="btn btn-ghost btn-sm hidden">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64A9 9 0 1 1 5.64 18.36 9 9 0 0 1 18.36 6.64M12 2v4m0 12v4"/></svg>
+          Disconnect
+        </button>
+      </div>
+    </header>
+
+    <!-- QR Modal -->
+    <div id="qr-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content glass-panel">
+        <div class="modal-header">
+          <h3>Scan QR Code</h3>
+          <button id="qr-close" class="btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="qr-body">
+          <div id="qr-loading" class="qr-loading">
+            <div class="spinner"></div>
+            <p>Generating QR code...</p>
+          </div>
+          <img id="qr-image" class="qr-image hidden" alt="QR Code" />
+        </div>
+        <p class="qr-hint">Open WhatsApp → Linked Devices → Link a Device</p>
+      </div>
+    </div>
+
+    <!-- Campaign Detail Modal -->
+    <div id="detail-modal" class="modal hidden">
+      <div class="modal-backdrop" id="detail-backdrop"></div>
+      <div class="modal-content glass-panel modal-wide">
+        <div class="modal-header">
+          <h3 id="detail-title">Campaign Details</h3>
+          <button id="detail-close" class="btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div id="detail-body" class="detail-body"></div>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="modal hidden">
+      <div class="modal-backdrop" id="confirm-backdrop"></div>
+      <div class="modal-content glass-panel">
+        <div class="modal-header">
+          <h3 id="confirm-title">Confirm</h3>
+          <button id="confirm-close" class="btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p id="confirm-message" class="confirm-msg"></p>
+        <div class="confirm-actions">
+          <button id="confirm-cancel" class="btn btn-ghost btn-sm">Cancel</button>
+          <button id="confirm-ok" class="btn btn-danger btn-sm">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ VIEW: SENDER ═══ -->
+    <main class="main-grid" id="view-sender">
+      <!-- Left Column: Contacts -->
+      <section class="panel glass-panel contacts-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <h2>Contacts</h2>
+          </div>
+          <span class="counter" id="contact-count-badge">0</span>
+        </div>
+        <div class="panel-body">
+          <div class="input-group">
+            <div class="segmented-control">
+              <button class="seg-btn active" data-tab="csv">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                CSV
+              </button>
+              <button class="seg-btn" data-tab="manual">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Manual
+              </button>
+            </div>
+          </div>
+          <div id="tab-csv" class="tab-panel active">
+            <label class="file-drop" id="file-drop">
+              <input type="file" id="csv-input" accept=".csv" />
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span class="file-drop-text">Drop CSV or click to browse</span>
+              <span class="file-drop-hint">Columns: phone, name, class, student_id, fee_item, total_due, payment_last_date</span>
+            </label>
+          </div>
+          <div id="tab-manual" class="tab-panel">
+            <textarea id="manual-contacts" class="textarea" rows="4" placeholder="phone, name, class, student_id, fee_item, total_due, last_date&#10;8801712345678, John, 10A, STU001, Tuition, 5000, 2026-12-31"></textarea>
+            <button id="btn-add-manual" class="btn btn-glass btn-sm btn-full">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Add Contacts
+            </button>
+          </div>
+          <div id="contacts-list-container">
+            <div id="contacts-empty" class="empty-state">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <p>No contacts added yet</p>
+            </div>
+            <div id="contacts-list" class="contacts-list hidden"></div>
+            <button id="btn-clear-contacts" class="btn btn-ghost btn-sm btn-full hidden">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              Clear All
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Center Column: Compose -->
+      <section class="panel glass-panel compose-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <h2>Compose</h2>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="compose-area">
+            <label class="label">Message Template</label>
+            <div class="var-buttons">
+              <button class="var-btn" data-var="name">name</button>
+              <button class="var-btn" data-var="class">class</button>
+              <button class="var-btn" data-var="student_id">student_id</button>
+              <button class="var-btn" data-var="fee_item">fee_item</button>
+              <button class="var-btn" data-var="total_due">total_due</button>
+              <button class="var-btn" data-var="payment_last_date">payment_last_date</button>
+            </div>
+            <div id="message-editor" class="rich-editor" contenteditable="true" data-placeholder="Start typing your message and click buttons above to insert variables..."></div>
+            <div class="textarea-footer">
+              <span class="hint-tag">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                Click variable buttons to insert personalized tags
+              </span>
+              <span id="char-count" class="char-count">0</span>
+            </div>
+            <div class="settings-row">
+              <label class="label">Delay Between Messages</label>
+              <div class="delay-inputs">
+                <div class="input-with-unit">
+                  <input type="number" id="delay-min" class="input-num" value="3" min="1" max="60" />
+                  <span class="unit">sec</span>
+                </div>
+                <span class="delay-sep">to</span>
+                <div class="input-with-unit">
+                  <input type="number" id="delay-max" class="input-num" value="7" min="2" max="120" />
+                  <span class="unit">sec</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="send-actions">
+            <button id="btn-send" class="btn btn-primary btn-lg btn-full" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Start Sending
+            </button>
+            <button id="btn-stop" class="btn btn-danger btn-lg btn-full hidden">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+              Stop Sending
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Activity -->
+      <section class="panel glass-panel activity-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <h2>Activity</h2>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="summary-cards" class="summary-cards hidden">
+            <div class="stat-card stat-sent">
+              <span class="stat-value" id="summary-sent">0</span>
+              <span class="stat-label">Sent</span>
+            </div>
+            <div class="stat-card stat-failed">
+              <span class="stat-value" id="summary-failed">0</span>
+              <span class="stat-label">Failed</span>
+            </div>
+            <div class="stat-card stat-total">
+              <span class="stat-value" id="summary-total">0</span>
+              <span class="stat-label">Total</span>
+            </div>
+          </div>
+          <div id="progress-container" class="progress-section hidden">
+            <div class="progress-header">
+              <span id="progress-label">Sending...</span>
+              <span id="progress-pct">0%</span>
+            </div>
+            <div class="progress-track">
+              <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <span id="progress-text" class="progress-sub">0 / 0</span>
+          </div>
+          <div id="log-container" class="log-section">
+            <div id="log-empty" class="empty-state">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <p>Waiting for activity...</p>
+            </div>
+            <div id="log" class="log hidden"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ═══ VIEW: HISTORY ═══ -->
+    <div id="view-history" class="hidden">
+      <div class="history-stats glass-panel" id="history-stats">
+        <div class="h-stat">
+          <span class="h-stat-value" id="h-total-campaigns">0</span>
+          <span class="h-stat-label">Campaigns</span>
+        </div>
+        <div class="h-stat">
+          <span class="h-stat-value" id="h-total-sent">0</span>
+          <span class="h-stat-label">Total Sent</span>
+        </div>
+        <div class="h-stat">
+          <span class="h-stat-value" id="h-total-failed">0</span>
+          <span class="h-stat-label">Total Failed</span>
+        </div>
+        <div class="h-stat">
+          <span class="h-stat-value" id="h-total-messages">0</span>
+          <span class="h-stat-label">Total Messages</span>
+        </div>
+      </div>
+      <div class="panel glass-panel history-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <h2>Campaign History</h2>
+          </div>
+          <button id="btn-refresh-history" class="btn btn-ghost btn-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+        </div>
+        <div class="panel-body" id="history-body">
+          <div id="history-empty" class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <p>No campaigns yet</p>
+          </div>
+          <div id="history-list" class="history-list hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ VIEW: SETTINGS ═══ -->
+    <div id="view-settings" class="hidden">
+      <div class="panel glass-panel" style="max-width:640px;margin:0 auto;">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <h2>Settings</h2>
+          </div>
+        </div>
+        <div class="panel-body">
+          <!-- Connection -->
+          <div class="settings-section">
+            <div class="settings-section-title">Connection</div>
+            <div class="settings-row"><span class="settings-label">Status</span><span class="settings-value" id="s-status">Offline</span></div>
+            <div class="settings-row"><span class="settings-label">Device Name</span><span class="settings-value" id="s-device">—</span></div>
+            <div class="settings-row"><span class="settings-label">Platform</span><span class="settings-value" id="s-platform">—</span></div>
+            <div class="settings-row"><span class="settings-label">Phone</span><span class="settings-value" id="s-phone">—</span></div>
+            <div class="settings-row"><span class="settings-label">Connected Since</span><span class="settings-value" id="s-connected-time">—</span></div>
+            <div class="settings-row"><span class="settings-label">Uptime</span><span class="settings-value" id="s-uptime">—</span></div>
+          </div>
+          <!-- Appearance -->
+          <div class="settings-section">
+            <div class="settings-section-title">Appearance</div>
+            <div class="settings-row">
+              <span class="settings-label">Theme</span>
+              <div class="theme-switch">
+                <button class="theme-opt" data-theme="dark">🌙 Dark</button>
+                <button class="theme-opt" data-theme="light">☀️ Light</button>
+              </div>
+            </div>
+          </div>
+          <!-- Danger Zone -->
+          <div class="settings-section">
+            <div class="settings-section-title" style="color:var(--danger)">Danger Zone</div>
+            <p style="font-size:0.72rem;color:var(--text-muted);margin-bottom:12px;">These actions are irreversible. Proceed with caution.</p>
+            <div class="settings-actions">
+              <button id="btn-delete-auth" class="btn-outline-danger">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Delete Connection Data
+              </button>
+              <button id="btn-reset-app" class="btn-outline-danger">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                Reset Entire App
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
